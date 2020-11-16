@@ -1,6 +1,7 @@
 #!/bin/bash
+#系统基础管理主函数
 init_main(){
-  echo -e "\033[31m系统基础管理清单:\033[0m\n1.主机名配置\n2.网络配置\nback.返回主菜单\nexit.退出脚本"
+  echo -e "\033[31m系统基础管理清单:\033[0m\n1.主机名配置\n2.网络配置\n3.用户管理\nback.返回主菜单\nexit.退出脚本"
   echo -ne "\033[41;37m请选择功能:\033[0m"
   read num
   case $num in
@@ -9,6 +10,9 @@ init_main(){
     ;;
     2)
     network_setting
+    ;;
+    3)
+    user_setting
     ;;
     back)
     sh main.sh
@@ -23,6 +27,8 @@ init_main(){
   esac
 }
 
+
+#主机名配置函数
 hostname_setting(){
   current_name=`hostname`
   echo "当前主机名为:${current_name}"
@@ -38,15 +44,17 @@ hostname_setting(){
   fi
 }
 
-
+#网络配置函数
 network_setting(){
   network_list=`ip addr | sed -r -n 's/^[0-9]+: (.*):.*/\1/p'`
-  echo -e "当前存在网卡:\n${network_list}"
+  echo -e "\033[31m当前存在网卡:\033[0m\n${network_list}"
   network_method_change
 }
 
 network_method_change(){
-  read -p "请输入更改网络连接方式:\n1.静态(static)\n2.动态(dhcp)" network_method
+  echo -e "\033[31m网络连接方式:\033[0m\n1.静态(static)\n2.动态(dhcp)\nback.返回\nexit.退出"
+  echo -ne "\033[41;37m请选择网络连接方式:\033[0m"
+	read network_method
   case $network_method in
     1)
     read -p "请输入需要修改网卡配置名称:" network_name
@@ -141,14 +149,62 @@ EOF
     fi
     ;;
     back)
-    sh main.sh
+    init_main  
     ;;
     exit)
     exit 0
     ;;
     *)
-    echo "非法输入,重新选择!"
+    echo "非法输入,请重新执行此功能!"
     init_main
     ;;
   esac
+}
+
+
+#用户管理函数
+
+user_setting(){
+  echo -e  "\033[31m操作选项:\033[0m\n1.增\n2.删\n3.查\nback.返回\nexit.退出"
+  echo -ne "\033[41;37m请选择操作:\033[0m"
+  read action
+  case ${action} in 
+	  1)
+    read -p  "输入被执行用户:" user
+		useradd ${user}
+		if [ $? -eq 0 ]; then
+			echo "${user}用户添加成功"
+			user_setting
+  	else
+   	  echo "${user}用户添加失败,请重新执行"
+  	  user_setting
+  	fi
+		;;
+  	2)
+    read -p  "输入被执行用户:" user
+ 		userdel -r ${user}
+  	if [ $? -eq 0 ]; then
+    	echo "${user}用户删除功"
+    	setting
+  	else
+    	echo "${user}用户删除失败,请重新执行"
+    	setting
+  	fi
+  	;;
+  	3)
+  	user_list=`cat /etc/passwd|awk -F: '{print $1}'`
+  	echo -e "当前主机存在用户:\n${user_list}"
+  	user_setting
+		;;
+  	back)
+		init_main
+		;;
+  	exit)
+  	exit 0
+  	;;
+		*)
+  	echo "非法输入,请重新执行此功能!"
+  	init_main
+  	;;
+	esac
 }
